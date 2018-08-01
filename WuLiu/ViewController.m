@@ -69,22 +69,4 @@
     cell.model = model;
     return model.rowHeight;
 }
-
-+ (BOOL)isPhoneNum:(NSString *)phoneNum
-{
-    //判断移动手机号
-    NSString *CM = @"(^1(3[4-9]|4[7]|5[0-27-9]|7[8]|8[2-478])\\d{8}$)|(^1705\\d{7}$)";
-    //固话及小灵通
-    NSString *PHS = @"^(0[0-9]{2})\\d{8}$|^(0[0-9]{3}(\\d{7,8}))$";
-    NSPredicate *regextestcm = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", CM];
-    NSPredicate *regextestphs = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", PHS];
-    
-    if (([regextestcm evaluateWithObject:phoneNum] == YES)
-        || ([regextestphs evaluateWithObject:phoneNum] == YES)){
-        return YES;
-    }
-    return NO;
-}
-
-
 @end
