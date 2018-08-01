@@ -8,6 +8,7 @@
 
 #import "WuliuCell.h"
 #import "UIView+Frame.h"
+#import "YYText.h"
 
 /***  当前屏幕宽度 */
 #define SCREEN_WIDTH [UIScreen mainScreen].bounds.size.width
@@ -22,7 +23,7 @@
 ///时间
 @property (nonatomic, strong) UILabel *timeLabel;
 ///物流
-@property (nonatomic, strong) UILabel *contextLabel;
+@property (nonatomic, strong) YYLabel *contextLabel;
 @end
 
 @implementation WuliuCell
@@ -34,7 +35,6 @@
     }
     return self;
 }
-
 
 - (void)initSubViews {
     
@@ -49,7 +49,7 @@
     self.cirlePoint.layer.masksToBounds = YES;
     self.cirlePoint.centerX = 20 + self.timeLine.width * 0.5;
     
-    self.contextLabel = [[UILabel alloc] init];
+    self.contextLabel = [[YYLabel alloc] init];
     self.contextLabel.font = [UIFont systemFontOfSize:13];
     self.contextLabel.numberOfLines = 0;
     [self.contentView addSubview:self.contextLabel];
@@ -64,8 +64,27 @@
     
     _model = model;
     
-    self.contextLabel.text = model.context;
-    self.contextLabel.textColor = [UIColor colorWithRed:153.0f/255.0f green:153.0f/255.0f blue:153.0f/255.0f alpha:1];
+    UIColor *contextColor;
+    if (model.wuliuCellPosition == WuliuCellPositionTop) {
+        contextColor = [UIColor colorWithRed:60.0f/255.0f green:60.0f/255.0f blue:60.0f/255.0f alpha:1];
+    }else {
+        contextColor = [UIColor colorWithRed:153.0f/255.0f green:153.0f/255.0f blue:153.0f/255.0f alpha:1];
+    }
+    NSMutableAttributedString *text = [[NSMutableAttributedString alloc] initWithString:model.context attributes:@{NSForegroundColorAttributeName:contextColor}];
+    
+    NSArray * phoneArray = [self getPhoneNumbersFromString:model.context];
+    for (NSString *phoneStr in phoneArray) {
+
+        [text addAttribute:NSForegroundColorAttributeName value:[UIColor colorWithRed:251.0f/255.0f green:162.0f/255.0f blue:44.0f/255.0f alpha:1.0f] range:[model.context rangeOfString:phoneStr]];
+        YYTextHighlight *highlight = [YYTextHighlight new];
+        highlight.tapAction = ^(UIView *containerView, NSAttributedString *text, NSRange range, CGRect rect) {
+            NSString *str=[[NSString alloc]initWithFormat:@"tel:%@",phoneStr];
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:str]];
+        };
+        [text yy_setTextHighlight:highlight range:[model.context rangeOfString:phoneStr]];
+    }
+    
+    self.contextLabel.attributedText = text;
     self.contextLabel.size = [self.contextLabel sizeThatFits:CGSizeMake(SCREEN_WIDTH - 60, [UIFont systemFontOfSize:13].lineHeight * 3)];
     self.contextLabel.left = 40;
     self.contextLabel.top = 8;
@@ -83,10 +102,28 @@
     if (model.wuliuCellPosition == WuliuCellPositionTop) {
         self.timeLine.top = model.rowHeight * 0.5;
         self.timeLine.height = model.rowHeight * 0.5;
-        self.contextLabel.textColor = [UIColor colorWithRed:60.0f/255.0f green:60.0f/255.0f blue:60.0f/255.0f alpha:1];
     }else if (model.wuliuCellPosition == WuliuCellPositionTail){
         self.timeLine.height = model.rowHeight * 0.5;
     }
+}
+
+- (NSArray *) getPhoneNumbersFromString:(NSString *)str {
+    
+    NSError* error = nil;
+    NSString* regulaStr = @"(([0-9]{11})|((400|800)([0-9\\-]{7,10})|(([0-9]{4}|[0-9]{3})(-| )?)?([0-9]{7,8})((-| |转)*([0-9]{1,4}))?))";
+    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:regulaStr
+                                                                           options:NSRegularExpressionCaseInsensitive
+                                                                             error:&error];
+    
+    NSArray *arrayOfAllMatches = [regex matchesInString:str options:0 range:NSMakeRange(0, [str length])];
+    NSMutableArray* numbers = [NSMutableArray arrayWithCapacity:arrayOfAllMatches.count];
+    for (NSTextCheckingResult *match in arrayOfAllMatches)
+    {
+        NSString* substringForMatch = [str substringWithRange:match.range];
+        [numbers addObject:substringForMatch];
+        
+    }
+    return numbers;
 }
 
 @end
